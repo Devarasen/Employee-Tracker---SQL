@@ -17,9 +17,8 @@ const db = mysql.createConnection(
 );
 
 
-
 function viewDepartments() {
-    db.query('SELECT * FROM department', (err, rows) => {
+    db.query('SELECT id, name FROM department', (err, rows) => {
         if (err) {
             console.error(err.message);
             return;
@@ -30,7 +29,7 @@ function viewDepartments() {
 }
 
 function viewRoles() {
-    db.query('SELECT * FROM role', (err, rows) => {
+    db.query('SELECT id, title FROM role', (err, rows) => {
         if (err) {
             console.error(err.message);
             return;
@@ -41,7 +40,7 @@ function viewRoles() {
 }
 
 function viewEmployees() {
-    db.query('SELECT * FROM employee', (err, rows) => {
+    db.query('SELECT id, first_name, last_name FROM employee', (err, rows) => {
         if (err) {
             console.error(err.message);
             return;
@@ -52,13 +51,27 @@ function viewEmployees() {
 }
 
 function addDepartment() {
-    db.query('SELECT * FROM department', (err, rows) => {
-        if (err) {
-            console.error(err.message);
-            return;
-        }
-        console.table(rows);
-    });
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'departmentName',
+                message: 'Enter the name of the new department:'
+            }
+        ])
+        .then(answers => {
+            const newDepartmentName = answers.departmentName;
+            const sql = 'INSERT INTO department (name) VALUES (?)';
+
+            db.query(sql, [newDepartmentName], (err, result) => {
+                if (err) {
+                    console.error(err.message);
+                    return;
+                }
+                console.log(`Added new department: ${newDepartmentName}`);
+                promptUser();
+            });
+        });
 }
 
 function addRole() {
