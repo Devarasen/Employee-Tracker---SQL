@@ -1,0 +1,24 @@
+{
+  "name": "y",
+  "version": "1.0.0",
+  "description": "Employee Tracker",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Devarasen/Employee-Tracker---SQL.git"
+  },
+  "author": "DS",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Devarasen/Employee-Tracker---SQL/issues"
+  },
+  "homepage": "https://github.com/Devarasen/Employee-Tracker---SQL#readme",
+  "dependencies": {
+    "inquirer": "^8.2.4",
+    "mysql2": "^2.2.5"
+  }
+}
