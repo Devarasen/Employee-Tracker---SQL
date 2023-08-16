@@ -1,9 +1,8 @@
 const inquirer = require('inquirer');
 const consoleTable = require('console.table');
-const userInput = require('./lib/userInput'); 
 const mysql = require('mysql2');
 const displayMenu = require('./lib/userInput');
-
+const figlet = require('figlet');
 
 
 const db = mysql.createConnection(
@@ -15,6 +14,14 @@ const db = mysql.createConnection(
     },
     console.log(`Connected to the staff_db database.`)
 );
+
+function displayHeader() {
+    console.log("\n**************************************");
+    console.log("          Employee Manager");
+    console.log("**************************************\n");
+}
+
+displayHeader();
 
 
 function viewDepartments() {
