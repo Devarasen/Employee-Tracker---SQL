@@ -25,7 +25,7 @@ displayHeader();
 
 
 function viewDepartments() {
-    db.query('SELECT id, name FROM department', (err, rows) => {
+    db.query('SELECT name, id FROM department', (err, rows) => {
         if (err) {
             console.error(err.message);
             return;
@@ -36,7 +36,18 @@ function viewDepartments() {
 }
 
 function viewRoles() {
-    db.query('SELECT id, title FROM role', (err, rows) => {
+    const query = `
+        SELECT 
+            r.title, 
+            r.id AS role_id, 
+            d.name AS department_name, 
+            r.salary
+        FROM role AS r
+        JOIN department AS d 
+        ON r.department_id = d.id
+    `;
+
+    db.query(query, (err, rows) => {
         if (err) {
             console.error(err.message);
             return;
