@@ -11,10 +11,13 @@ function displayMenu() {
           "View All Departments",
           "View All Roles",
           "View All Employees",
+          "View Employee by Manager",
+          "View Employee By Department",
           "Add A Department",
           "Add A Role",
           "Add An Employee",
           "Update An Employee Role",
+          "Update Employee Manager",         
           "Quit"
         ]
       }
