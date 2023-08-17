@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const displayMenu = require('./menuController/userInput');
+const consoleTable = require('console.table');
 
 // Establish connection
 const db = mysql.createConnection(
@@ -13,7 +14,7 @@ const db = mysql.createConnection(
     console.log(`Connected to the staff_db database.`)
 );
 
-
+// Employee manager display
 function displayHeader() {
     console.log("\n**************************************");
     console.log("          Employee Manager");
@@ -40,7 +41,7 @@ function viewRoles() {
             r.title, 
             r.id AS role_id, 
             d.name AS department_name, 
-            r.salary as salary_AUD
+            r.salary
         FROM role AS r
         JOIN department AS d 
         ON r.department_id = d.id
@@ -86,9 +87,7 @@ function viewEmployeesByManager() {
     const query = `
         SELECT 
             CONCAT(m.first_name, ' ', m.last_name) AS manager,
-            e.id, 
-            e.first_name, 
-            e.last_name
+            e.id, e.first_name, e.last_name
         FROM employee AS e
         LEFT JOIN employee AS m ON e.manager_id = m.id
         ORDER BY manager;
@@ -153,151 +152,253 @@ function addDepartment() {
 }
 
 function addRole() {
-    inquirer
-        .prompt([
-            {
-                type: 'input',
-                name: 'roleName',
-                message: 'Enter the name of the new role:'
-            },
-            {
-                type: 'input',
-                name: 'salary',
-                message: 'Enter the salary for the new role:'
-            },
-            {
-                type: 'input',
-                name: 'departmentId',
-                message: 'Enter the department ID for the new role:'
-            }
-        ])
-        .then(answers => {
-            const roleName = answers.roleName;
-            const salary = parseFloat(answers.salary);
-            const departmentId = parseInt(answers.departmentId);
+    const departmentsQuery = 'SELECT id, name FROM department';
 
-            const insertQuery = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)';
-            const values = [roleName, salary, departmentId];
+    db.query(departmentsQuery, (err, departments) => {
+        if (err) {
+            console.error('Error fetching departments:', err.message);
+            return;
+        }
 
-            db.query(insertQuery, values, (err, result) => {
-                if (err) {
-                    console.error('Error adding role:', err.message);
-                    return;
+        const departmentChoices = departments.map(department => ({
+            name: department.name,
+            value: department.id
+        }));
+
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'roleName',
+                    message: 'Enter the name of the new role:'
+                },
+                {
+                    type: 'input',
+                    name: 'salary',
+                    message: 'Enter the salary for the new role:'
+                },
+                {
+                    type: 'list',
+                    name: 'departmentId',
+                    message: 'Select the department for the new role:',
+                    choices: departmentChoices
                 }
-                console.log(`Role '${roleName}' added successfully`);
-                console.log('\n');
-                viewRoles();
+            ])
+            .then(answers => {
+                const roleName = answers.roleName;
+                const salary = parseFloat(answers.salary);
+                const departmentId = parseInt(answers.departmentId);
+
+                const insertQuery = 'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)';
+                const values = [roleName, salary, departmentId];
+
+                db.query(insertQuery, values, (err, result) => {
+                    if (err) {
+                        console.error('Error adding role:', err.message);
+                        return;
+                    }
+                    console.log(`Role '${roleName}' added successfully`);
+                    console.log('\n');
+                    viewRoles();
+                });
             });
-        });
+    });
 }
 
 function addEmployee() {
-    inquirer
-        .prompt([
-            {
-                type: 'input',
-                name: 'firstName',
-                message: "Enter the employee's first name:"
-            },
-            {
-                type: 'input',
-                name: 'lastName',
-                message: "Enter the employee's last name:"
-            },
-            {
-                type: 'input',
-                name: 'roleId',
-                message: "Enter the role ID for the employee:"
-            },
-            {
-                type: 'input',
-                name: 'managerId',
-                message: "Enter the manager's ID for the employee (or leave empty if none):"
+    const rolesQuery = 'SELECT id, title FROM role';
+    const managersQuery = 'SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employee';
+
+    db.query(rolesQuery, (err, roles) => {
+        if (err) {
+            console.error('Error fetching roles:', err.message);
+            return;
+        }
+
+        db.query(managersQuery, (err, managers) => {
+            if (err) {
+                console.error('Error fetching managers:', err.message);
+                return;
             }
-        ])
-        .then(answers => {
-            const firstName = answers.firstName;
-            const lastName = answers.lastName;
-            const roleId = parseInt(answers.roleId);
-            const managerId = answers.managerId !== '' ? parseInt(answers.managerId) : null;
 
-            const insertQuery = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
-            const values = [firstName, lastName, roleId, managerId];
+            const roleChoices = roles.map(role => ({
+                name: role.title,
+                value: role.id
+            }));
 
-            db.query(insertQuery, values, (err, result) => {
-                if (err) {
-                    console.error('Error adding employee:', err.message);
-                    return;
-                }
-                console.log(`Employee '${firstName} ${lastName}' added successfully`);
-                console.log('\n');
-                viewEmployees();
-            });
+            const managerChoices = managers.map(manager => ({
+                name: manager.full_name,
+                value: manager.id
+            }));
+
+            inquirer
+                .prompt([
+                    {
+                        type: 'input',
+                        name: 'firstName',
+                        message: "Enter the employee's first name:"
+                    },
+                    {
+                        type: 'input',
+                        name: 'lastName',
+                        message: "Enter the employee's last name:"
+                    },
+                    {
+                        type: 'list',
+                        name: 'roleId',
+                        message: "Select the role for the employee:",
+                        choices: roleChoices
+                    },
+                    {
+                        type: 'list',
+                        name: 'managerId',
+                        message: "Select the manager for the employee (or leave empty if none):",
+                        choices: managerChoices
+                    }
+                ])
+                .then(answers => {
+                    const firstName = answers.firstName;
+                    const lastName = answers.lastName;
+                    const roleId = parseInt(answers.roleId);
+                    const managerId = answers.managerId !== '' ? parseInt(answers.managerId) : null;
+
+                    const insertQuery = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+                    const values = [firstName, lastName, roleId, managerId];
+
+                    db.query(insertQuery, values, (err, result) => {
+                        if (err) {
+                            console.error('Error adding employee:', err.message);
+                            return;
+                        }
+                        console.log(`Employee '${firstName} ${lastName}' added successfully`);
+                        console.log('\n');
+                        viewEmployees();
+                    });
+                });
         });
+    });
 }
 
 function updateEmployeeRole() {
-    inquirer
-        .prompt([
-            {
-                type: 'input',
-                name: 'employeeId',
-                message: "Enter the ID of the employee you want to update:"
-            },
-            {
-                type: 'input',
-                name: 'newRoleId',
-                message: "Enter the new role ID for the employee:"
+    const employeesQuery = 'SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employee';
+    const rolesQuery = 'SELECT id, title FROM role';
+
+    db.query(employeesQuery, (err, employees) => {
+        if (err) {
+            console.error('Error fetching employees:', err.message);
+            return;
+        }
+
+        db.query(rolesQuery, (err, roles) => {
+            if (err) {
+                console.error('Error fetching roles:', err.message);
+                return;
             }
-        ])
-        .then(answers => {
-            const employeeId = parseInt(answers.employeeId);
-            const newRoleId = parseInt(answers.newRoleId);
 
-            const updateQuery = 'UPDATE employee SET role_id = ? WHERE id = ?';
-            const values = [newRoleId, employeeId];
+            const employeeChoices = employees.map(employee => ({
+                name: employee.full_name,
+                value: employee.id
+            }));
 
-            db.query(updateQuery, values, (err, result) => {
-                if (err) {
-                    console.error('Error updating employee role:', err.message);
-                    return;
-                }
-                console.log(`Employee's role updated successfully`);
-                viewEmployees();
-            });
+            const roleChoices = roles.map(role => ({
+                name: role.title,
+                value: role.id
+            }));
+
+            inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'employeeId',
+                        message: 'Select the employee you want to update:',
+                        choices: employeeChoices
+                    },
+                    {
+                        type: 'list',
+                        name: 'newRoleId',
+                        message: 'Select the new role for the employee:',
+                        choices: roleChoices
+                    }
+                ])
+                .then(answers => {
+                    const employeeId = parseInt(answers.employeeId);
+                    const newRoleId = parseInt(answers.newRoleId);
+
+                    const updateQuery = 'UPDATE employee SET role_id = ? WHERE id = ?';
+                    const values = [newRoleId, employeeId];
+
+                    db.query(updateQuery, values, (err, result) => {
+                        if (err) {
+                            console.error('Error updating employee role:', err.message);
+                            return;
+                        }
+                        console.log('Employee\'s role updated successfully');
+                        viewEmployees();
+                    });
+                });
         });
+    });
 }
 
 function updateEmployeeManager() {
-    inquirer
-        .prompt([
-            {
-                type: 'input',
-                name: 'employeeId',
-                message: "Enter the ID of the employee you want to update:"
-            },
-            {
-                type: 'input',
-                name: 'newManagerId',
-                message: "Enter the new manager's ID for the employee:"
+    const employeesQuery = 'SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employee';
+    const managersQuery = 'SELECT id, CONCAT(first_name, " ", last_name) AS full_name FROM employee WHERE manager_id IS NULL';
+
+    db.query(employeesQuery, (err, employees) => {
+        if (err) {
+            console.error('Error fetching employees:', err.message);
+            return;
+        }
+
+        db.query(managersQuery, (err, managers) => {
+            if (err) {
+                console.error('Error fetching managers:', err.message);
+                return;
             }
-        ])
-        .then(answers => {
-            const employeeId = parseInt(answers.employeeId);
-            const newManagerId = answers.newManagerId !== '' ? parseInt(answers.newManagerId) : null;
 
-            const updateQuery = 'UPDATE employee SET manager_id = ? WHERE id = ?';
-            const values = [newManagerId, employeeId];
+            const employeeChoices = employees.map(employee => ({
+                name: employee.full_name,
+                value: employee.id
+            }));
 
-            db.query(updateQuery, values, (err, result) => {
-                if (err) {
-                    console.error('Error updating employee manager:', err.message);
-                    return;
-                }
-                console.log(`Employee's manager updated successfully`);
-                viewEmployeesByManager();
-            });
+            const managerChoices = managers.map(manager => ({
+                name: manager.full_name,
+                value: manager.id
+            }));
+
+            inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'employeeId',
+                        message: 'Select the employee you want to update:',
+                        choices: employeeChoices
+                    },
+                    {
+                        type: 'list',
+                        name: 'newManagerId',
+                        message: 'Select the new manager for the employee:',
+                        choices: managerChoices
+                    }
+                ])
+                .then(answers => {
+                    const employeeId = parseInt(answers.employeeId);
+                    const newManagerId = parseInt(answers.newManagerId);
+
+                    const updateQuery = 'UPDATE employee SET manager_id = ? WHERE id = ?';
+                    const values = [newManagerId, employeeId];
+
+                    db.query(updateQuery, values, (err, result) => {
+                        if (err) {
+                            console.error('Error updating employee manager:', err.message);
+                            return;
+                        }
+                        console.log("Employee's manager updated successfully");
+                        viewEmployeesByManager();
+                    });
+                });
         });
+    });
 }
 
 // Run display menu function
@@ -315,12 +416,6 @@ function promptUser() {
                 case "View All Employees":
                     viewEmployees();
                     break;
-                case "View Employee by Manager":
-                    viewEmployeesByManager();
-                    break;
-                case "View Employee By Department":
-                    viewEmployeesByDepartment();
-                    break;
                 case "Add A Department":
                     addDepartment();
                     break;
@@ -335,7 +430,13 @@ function promptUser() {
                     break;
                 case "Update Employee Manager":
                     updateEmployeeManager();
-                    break;                
+                    break;
+                case "View Employee by Manager":
+                    viewEmployeesByManager();
+                    break;
+                case "View Employee By Department":
+                    viewEmployeesByDepartment();
+                    break;
                 case "Quit":
                     console.log('Exiting...');
                     db.close();
