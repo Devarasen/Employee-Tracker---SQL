@@ -2,16 +2,18 @@ const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const displayMenu = require('./menuController/userInput');
 const consoleTable = require('console.table');
+const dotenv = require('dotenv');
+dotenv.config(); // Load the environment variables from .env
 
 // Establish connection
 const db = mysql.createConnection(
     {
-        host: 'localhost',
-        user: 'root',
-        password: 'abcd1234',
-        database: 'staff_db'
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME
     },
-    console.log(`Connected to the staff_db database.`)
+    console.log(`Connected to the ${process.env.DB_NAME} database.`)
 );
 
 // Employee manager display
