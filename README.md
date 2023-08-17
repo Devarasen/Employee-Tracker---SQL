@@ -6,6 +6,14 @@ Employee Tracker - SQL
 
 ## Description
 
+This is a command-line application to manage a company's employee database, using Node.js, Inquirer, and MySQL.
+
+Walkthrough video will show instructions on how to create your own svg logo file using this project. The video will also show the tests being run.
+
+Link:
+
+Github Repo: https://github.com/Devarasen/Employee-Tracker---SQL
+
 ![Screenshot](./assets/Project%20Screenshot.PNG)
 
 ## Table of Contents
