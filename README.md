@@ -10,7 +10,7 @@ This is a command-line application to manage a company's employee database, usin
 
 Walkthrough video will show instructions on how to create your own svg logo file using this project. The video will also show the tests being run.
 
-Link:
+Link: https://drive.google.com/file/d/1JhoCIY9MZ27SQSBAQ5L_h5LlovLavWyL/view?usp=sharing
 
 Github Repo: https://github.com/Devarasen/Employee-Tracker---SQL
 
